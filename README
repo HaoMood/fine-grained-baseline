@@ -1,0 +1,60 @@
+              Baseline Results for Fine-grained Visual Recognition
+
+
+DESCRIPTIONS
+    PyTorch code for baseline results for fine-grained visual recognition.
+
+    ResNet-50 and VGG-16 are two mostly widely used backbone networks for
+    fine-grained visual recognition. These two networks are pre-trained on
+    ImageNet.
+
+    For fine-grained fine-tuning, only the category label is used. The input
+    images are resized resized to a fixed size of 512*512 and randomly cropped
+    into 448*448. Random horizontal flip are applied for data augmentation.
+    There are three mostly used fine-grained datasets.
+
+              ---------------------------------------------------
+                Dataset    |   # classes |   # train  |  # test
+              ---------------------------------------------------
+                CUB        |      200    |    5,994   |   5,794
+                Cars       |      196    |    8,144   |   8,041
+                Aircraft   |      100    |    6,667   |   3,333
+              ---------------------------------------------------
+
+
+PREREQUIREMENTS
+    Python 3.7, where Anaconda is preferred.
+    https://www.anaconda.com/distribution/#download-section
+
+    PyTorch 1.0.0
+    https://pytorch.org/
+
+    Visdom (optional)
+    https://github.com/facebookresearch/visdom/
+
+
+USAGE
+    Prepraration
+    $ mkdir model; cd src/
+
+    Training
+    $ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py
+
+
+RESULTS
+                       Test accuarcy of baseline results.
+            --------------------------------------------------------
+              Input size  |    Model    | CUB (%)
+            --------------------------------------------------------
+                 224      |  ResNet-50  | 80.64
+                 448      |  ResNet-18  | 82.26
+                 448      |  ResNet-50  | 85.99
+            --------------------------------------------------------
+
+
+AUTHOR
+    Hao Zhang (zhangh0214@gmail.com)
+
+
+LICENSE
+    CC BY-SA 4.0
