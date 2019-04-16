@@ -39,8 +39,8 @@ __date__ = '2019-04-05'
 __email__ = 'zhangh0214@gmail.com'
 __license__ = 'CC BY-SA 4.0'
 __status__ = 'Development'
-__updated__ = '2019-04-10'
-__version__ = '2.2'
+__updated__ = '2019-04-15'
+__version__ = '2.6'
 
 
 class TrainingManager():
@@ -64,12 +64,14 @@ class TrainingManager():
         self._paths = paths
 
         # Prepare model and loss function.
-        self._model = model.Model(architecture='ResNet-50',
+        self._model = model.Model(architecture=self._options.arch,
+                                  input_size=self._options.input_size,
                                   num_classes=options.num_classes)
         self._model = torch.nn.DataParallel(self._model).cuda()
         print(self._model)
         torchsummary.summary(
-            self._model.module, input_size=(3, 448, 448))
+            self._model.module,
+            input_size=(3, self._options.input_size, self._options.input_size))
 
         # Display configurations and options.
         print('PyTorch %s, CUDA %s, cuDNN %s, GPU %s' % (
@@ -88,17 +90,20 @@ class TrainingManager():
             self._optimizer, milestones=[60, 115], gamma=0.1)
 
         # Prepare dataset.
+        resize_size = 512 if self._options.input_size == 448 else 256
         train_transform = torchvision.transforms.Compose([
-            torchvision.transforms.Resize((512, 512)),
-            torchvision.transforms.RandomCrop((448, 448)),
+            torchvision.transforms.Resize((resize_size, resize_size)),
+            torchvision.transforms.RandomCrop(
+                (self._options.input_size, self._options.input_size)),
             torchvision.transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
                                              std=(0.229, 0.224, 0.225)),
         ])
         val_transform = torchvision.transforms.Compose([
-            torchvision.transforms.Resize((512, 512)),
-            torchvision.transforms.CenterCrop((448, 448)),
+            torchvision.transforms.Resize((resize_size, resize_size)),
+            torchvision.transforms.CenterCrop(
+                (self._options.input_size, self._options.input_size)),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
                                              std=(0.229, 0.224, 0.225)),
@@ -252,9 +257,13 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='Training code.')
     parser.add_argument(
+        '--arch', default='resnet50', type=str, help='Backbone model.')
+    parser.add_argument(
         '--bs', default=64, type=int, help='Mini-batch size for training.')
     parser.add_argument(
         '--epochs', default=120, type=int, help='Epochs for training.')
+    parser.add_argument(
+        '--input_size', choices={224, 448}, default=448, type=int)
     parser.add_argument(
         '--lr', default=1e-2, type=float, help='Base lr for training.')
     parser.add_argument(

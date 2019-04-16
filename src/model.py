@@ -26,8 +26,8 @@ __date__ = '2019-04-05'
 __email__ = 'zhangh0214@gmail.com'
 __license__ = 'CC BY-SA 4.0'
 __status__ = 'Development'
-__updated__ = '2019-04-09'
-__version__ = '2.0'
+__updated__ = '2019-04-15'
+__version__ = '2.4'
 
 
 class Model(torch.nn.Module):
@@ -35,6 +35,7 @@ class Model(torch.nn.Module):
 
     Attributes:
         architecture: str. Which backbone model to use.
+        input_size: int. Input image size.
         num_classes: int.
         phase: str = extract/fc/all. Training fc or all layers.
         backbone: torch.nn.Module.
@@ -42,22 +43,31 @@ class Model(torch.nn.Module):
         bh: torch.nn.Module.
         fc: torch.nn.Module.
     """
-    def __init__(self, architecture: str, num_classes: int):
+    def __init__(self, architecture: str, input_size: int, num_classes: int):
         """Network initialization."""
         torch.nn.Module.__init__(self)
         self.architecture = architecture
+        self.input_size = input_size
         self.num_classes = num_classes
         self.phase = None
 
-        if self.architecture == 'VGG-16':
-            raise NotImplementedError
-        elif self.architecture == 'ResNet-50':
-            backbone = torchvision.models.resnet50(pretrained=True)
+        if self.architecture.startswith('vgg'):
+            backbone = getattr(torchvision.models,
+                               self.architecture)(pretrained=True)
+            self.backbone = backbone.features[:-1]
+            self.gap = torch.nn.AdaptiveAvgPool2d(1)
+            self.fc = torch.nn.Linear(
+                in_features=self.backbone[-2].out_channels,
+                out_features=num_classes, bias=True)
+        elif self.architecture.startswith('resnet'):
+            backbone = getattr(torchvision.models,
+                               self.architecture)(pretrained=True)
             self.backbone = torch.nn.Sequential(collections.OrderedDict(
                 list(backbone.named_children())[:-2]))
             self.gap = torch.nn.AdaptiveAvgPool2d(1)
             self.fc = torch.nn.Linear(
-                in_features=2048, out_features=num_classes, bias=True)
+                in_features=backbone.layer4[-1].bn2.num_features,
+                out_features=num_classes, bias=True)
         else:
             raise NotImplementedError
 
@@ -81,23 +91,15 @@ class Model(torch.nn.Module):
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         """Forward pass of the network."""
         N = X.size()[0]
-        assert X.size() == (N, 3, 448, 448)
+        assert X.size() == (N, 3, self.input_size, self.input_size)
         # Forward backbone network.
         X = self.backbone(X)
 
-        if self.architecture == 'VGG-16':
-            assert X.size() == (N, 512, 28, 28)
-            X = self.gap(X)
-            assert X.size() == (N, 512, 1, 1)
-            X = torch.reshape(X, (N, 512))
-        elif self.architecture == 'ResNet-50':
-            assert X.size() == (N, 2048, 14, 14)
-            X = self.gap(X)
-            assert X.size() == (N, 2048, 1, 1)
-            X = torch.reshape(X, (N, 2048))
-        else:
-            raise NotImplementedError
+        # GAP and reshape
+        X = self.gap(X)
+        X = torch.reshape(X, (N, -1))
 
+        # Classification.
         X = self.fc(X)
         assert X.size() == (N, self.num_classes)
         return X
