@@ -4,15 +4,12 @@
 DESCRIPTIONS
     PyTorch code for baseline results for fine-grained visual recognition.
 
-    ResNet-50 and VGG-16 are two mostly widely used backbone networks for
-    fine-grained visual recognition. These two networks are pre-trained on
-    ImageNet.
+    Fine-grained recognition tasks aim at identifying the specific species of
+    a bird, or the model of an aircraft. It is a challenging task because the
+    visual differences between the categories are subtle and can be easily
+    overwhelmed by the change of pose, viewpoint, or background.
 
-    For fine-grained fine-tuning, only the category label is used. The input
-    images are resized resized to a fixed size of 512*512 and randomly cropped
-    into 448*448. Random horizontal flip are applied for data augmentation.
-    There are three mostly used fine-grained datasets.
-
+            Commonly used fine-grained visual recognition datasets.
               ---------------------------------------------------
                 Dataset    |   # classes |   # train  |  # test
               ---------------------------------------------------
@@ -20,6 +17,39 @@ DESCRIPTIONS
                 Cars       |      196    |    8,144   |   8,041
                 Aircraft   |      100    |    6,667   |   3,333
               ---------------------------------------------------
+
+    ResNet-50 and VGG-16 are two mostly widely used backbone networks for
+    fine-grained visual recognition. These two networks are pre-trained on
+    ImageNet.
+
+                    Accuracy of ImageNet pre-trained models.
+                         -----------------------------
+                             Model    |  ImageNet (%)
+                         -----------------------------
+                            VGG-16    |    71.59
+                           ResNet-18  |    69.76
+                           ResNet-50  |    76.15
+                         -----------------------------
+
+    For fine-grained fine-tuning, only the category label is used. The input
+    images are resized resized to a fixed size of 512*512 and randomly cropped
+    into 448*448. Random horizontal flip are applied for data augmentation.
+    For VGG-16, two-step fine-tuning (fine-tune FC layer and then fine-tune all
+    layers) is essential for several bilinear pooling based methods. However,
+    two-step fine-tuning does not much help baseline results very much.
+
+                       Test accuarcy of baseline results.
+                    ----------------------------------------
+                      Input size  |    Model    |  CUB (%)
+                    ----------------------------------------
+                         224      |   VGG-16    |  74.47
+                         448      |   VGG-16    |  78.79
+                    ----------------------------------------
+                         224      |  ResNet-18  |  76.89
+                         224      |  ResNet-50  |  80.64
+                         448      |  ResNet-18  |  82.26
+                         448      |  ResNet-50  |  85.99
+                    ----------------------------------------
 
 
 PREREQUIREMENTS
@@ -36,20 +66,15 @@ PREREQUIREMENTS
 USAGE
     Prepraration
     $ mkdir model; cd src/
+    Modify line 282 of train.py to be your custom data path.
 
-    Training
-    $ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py
+    ResNet model fine-tuning
+    $ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --arch resnet50 \
+        --input_size 448
 
-
-RESULTS
-                       Test accuarcy of baseline results.
-            --------------------------------------------------------
-              Input size  |    Model    | CUB (%)
-            --------------------------------------------------------
-                 224      |  ResNet-50  | 80.64
-                 448      |  ResNet-18  | 82.26
-                 448      |  ResNet-50  | 85.99
-            --------------------------------------------------------
+    VGG model fine-tuning
+    $ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --arch vgg16 \
+        --input_size 448
 
 
 AUTHOR
