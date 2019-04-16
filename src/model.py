@@ -26,8 +26,8 @@ __date__ = '2019-04-05'
 __email__ = 'zhangh0214@gmail.com'
 __license__ = 'CC BY-SA 4.0'
 __status__ = 'Development'
-__updated__ = '2019-04-15'
-__version__ = '2.4'
+__updated__ = '2019-04-16'
+__version__ = '2.2'
 
 
 class Model(torch.nn.Module):
@@ -66,7 +66,7 @@ class Model(torch.nn.Module):
                 list(backbone.named_children())[:-2]))
             self.gap = torch.nn.AdaptiveAvgPool2d(1)
             self.fc = torch.nn.Linear(
-                in_features=backbone.layer4[-1].bn2.num_features,
+                in_features=backbone.layer4[-1].conv1.in_channels,
                 out_features=num_classes, bias=True)
         else:
             raise NotImplementedError
